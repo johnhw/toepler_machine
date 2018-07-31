@@ -140,7 +140,8 @@ module leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, wall_thick
 
 // demo
  
-use <libs/Chamfer.scad>
+/*use <libs/Chamfer.scad>
 use <basic_shapes.scad>
 tol = 0.2;
 leyden(200, 40, 5, 100, 5, 50, 100, 4, 16, 0, 0, 1);
+*/

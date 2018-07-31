@@ -231,6 +231,7 @@ brush_extend = brush_standoff_depth+rod_thick+tol;
 // axle
 module axle(h, r)
 {
+    color("lightgreen")
     cylinder(h,r,r,$fn=6);    
 }
 
@@ -244,6 +245,7 @@ module std_bearing_blank()
 // the bearing 
 module std_bearing()
 {
+    color("green")
     gear_bearing(axle_diam*2+tol, bearing_thick, bearing_diameter);          
 }
 
@@ -274,6 +276,7 @@ module support_polygon(upper, lower, height,  chamfer, rounded=1)
 module mmpulley(outer, inner, thick, belt_thick)
 {
     inch = 25.4; //mm
+    color("green")
     translate([0,0,belt_thick/2])
     {
         
@@ -460,7 +463,7 @@ module spark_arm_x()
         //translate([0,0,total_h-base_thick+spark_ball*2]) 
         color("SlateGray")   
         sphere(spark_ball);
-        color("LightBlue")
+        color("LightGray")
         cylinder(rod_arm_len, rod_thick, rod_thick);
         color("SlateGray")
         cylinder(rod_arm_len*0.5, rod_thick, rod_thick);    
@@ -503,8 +506,9 @@ module conductor(induct)
     
     rotate([0,90,0])
     {
-        
-        
+
+        // connecting rod
+        color("LightGray")
         cylinder(-conductor_x-inductor_thick-spark_ball+1, rod_thick, rod_thick);
         
         // spark shield
@@ -555,7 +559,7 @@ module brush_arm()
     // brush arm
     rotate([0,90,0])
     {
-            color("LightBlue")
+            color("LightGray")
             cylinder_path([
             [0,0,-conductor_x-rod_thick],
             [0,conductor_outside,-conductor_x-rod_thick],
@@ -568,7 +572,7 @@ module brush_arm()
 module neutral()
 {
     base_h = +rod_thick+base_thick+conductor_guide_h/2-rod_thick;
-   color("LightBlue")
+   color("LightGray")
     // neutraliser
     rotate([0,90,0])
     {
@@ -722,43 +726,43 @@ module handle()
     handle_offset = 2 + pulley_thick*2 + tol*2;
     // handle + spindle
     
-    rotate([0,90,0])
-    translate([0,0,-support_thick+handle_offset+handle_thick])
-    axle(support_thick+handle_offset+handle_thick, axle_diam);
+    color("lightgreen")
+    {
+        rotate([0,90,0])
+        translate([0,0,-support_thick+handle_offset+handle_thick])
+        axle(support_thick+handle_offset+handle_thick, axle_diam);
+        
+        cylinder_path([
+        
+        [-handle_offset,0,0], [-handle_offset,handle_len,0],
+        [-handle_offset,handle_len,0],
+        [-handle_offset-handle_protrude,handle_len]
+        ], handle_thick);
+        
+        
+        // handle grip
     
-    cylinder_path([
-    
-    [-handle_offset,0,0], [-handle_offset,handle_len,0],
-    [-handle_offset,handle_len,0],
-    [-handle_offset-handle_protrude,handle_len]
-    ], handle_thick);
-    
-    
-    // handle grip
-   
-    translate([-handle_offset,handle_len,0])
-    {            
-        rotate([0,-90,0])
-        {
-            
-            difference()
+        translate([-handle_offset,handle_len,0])
+        {            
+            rotate([0,-90,0])
             {
-            union()
-            {
-                cylinder(handle_protrude, handle_thick, handle_thick*2);
-                translate([0,0,handle_protrude])
+                
+                difference()
                 {
-                    sphere(handle_thick*2);
+                    union()
+                    {
+                        cylinder(handle_protrude, handle_thick, handle_thick*2);
+                        translate([0,0,handle_protrude])
+                        {
+                            sphere(handle_thick*2);
+                        }
+                    }                
+                    cylinder(handle_protrude, handle_thick+tol, handle_thick+tol);                
                 }
             }
             
-               cylinder(handle_protrude, handle_thick+tol, handle_thick+tol);
-            
         }
-        }
-        
     }
-    
 }
 
 
