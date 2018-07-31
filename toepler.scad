@@ -5,6 +5,7 @@ use <libs/bearing.scad>
 use <libs/threads_v2.scad>
 
 include <es_disk.scad>
+include <leyden.scad>
 
 // if 1, assemble entire machine
 // if 0, just output the one part listed below
@@ -865,128 +866,6 @@ module handle()
     
 }
 
-module leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h)
-{
-    cap_h = base;
-        translate([0,0,base-cap_h+wall_thick])
-        // cap
-        difference()
-        {
-        union()
-            {
-        difference()
-        {
-            chamferCylinder(base, base_rad, base_rad,chamfer*0.5);
-            translate([0,0,-wall_thick])
-            {
-               cylinder(base, leyden_rad+tol, leyden_rad+tol);
-            } 
-            // under cut
-            scale([1,1,0.55])
-                sphere(base_rad*0.75);
-        }
-        
-        // terminal
-        
-        
-            translate([0,0,base-chamfer])
-            {
-                intersection()
-                {
-                    scale([1,1,0.5])
-                        sphere(base_rad);
-                    cylinder(200, base_rad, base_rad);
-                }
-            }
-        }
-            translate([0,0,0])       
-            {
-                cylinder(terminal_h+base, rod_thick+tol, rod_thick+tol);
-            }
-        }
-        
-        
-        
-        
-        
-}
-
-// electrode sticking up from cap (slots through)
-module leyden_electrode(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h)
-{
-    translate([0,0,0])       
-        color("SlateGray")  
-        
-        difference()
-        {
-        union()
-            {
-                cylinder(terminal_h+base, rod_thick, rod_thick);
-                
-                translate([0,0,terminal_h+base])
-                {
-                   
-                    {
-                        sphere(spark_ball);
-                        
-                    }
-            }
-        }
-            rotate([0,90,0])
-            translate([-terminal_h-base,0,-50])
-            cylinder(100, rod_thick+tol, rod_thick+tol);
-                    
-    }
-}
-
-module leyden(leyden_h, leyden_rad, wall_thick, base, terminal_h, jar=1, cap=1, electrode=1)
-{
-    
-    chamfer = leyden_chamfer;
-    base_rad = leyden_rad * 1.25;
-    
-    conduct_h = leyden_conduct_h;
-    
-    if(jar)
-    {
-        translate([0,0,-chamfer])
-        chamferCylinder(base+chamfer, base_rad, base_rad, chamfer);
-        translate([0,0,base])
-        difference()
-        {
-            union()
-            {
-                color("White")
-                cylinder(leyden_h-base, leyden_rad, leyden_rad);
-                color("SlateGray")
-                cylinder(conduct_h , leyden_rad+tol, leyden_rad+tol);
-            }
-                
-            
-            translate([0,0,wall_thick])
-            {
-                
-            cylinder(leyden_h, leyden_rad-wall_thick-tol, leyden_rad-wall_thick-tol);
-            color("SlateGray")    
-            cylinder(conduct_h , leyden_rad-wall_thick, leyden_rad-wall_thick);
-            }
-        }
-    }
-
-    if(cap)
-    {
-        translate([0,0,leyden_h])
-        leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h);
-       
-        
-    }
-    if(electrode)
-    {
-       translate([0,0,leyden_h])
-       leyden_electrode(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h);
-    }
-     
-}
 
 leyden_terminal = spark_h - (leyden_h+leyden_base+base_thick);
 
@@ -1008,16 +887,16 @@ module spark_supports()
 module leyden_jars()
 {
     translate([-leyden_centre_offset+base_l/2,base_d/2-spark_support_centre,base_thick])
-    leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
+    leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h,  leyden_wall, leyden_base, leyden_terminal, rod_thick, spark_ball, 
             jar=1, cap=1, electrode=1);
     translate([leyden_centre_offset+base_l/2,base_d/2-spark_support_centre,base_thick])
-    leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
+    leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, leyden_wall, leyden_base, leyden_terminal,  rod_thick, spark_ball,
             jar=1, cap=1, electrode=1);
     translate([leyden_centre_offset+base_l/2,base_d/2+spark_support_centre,base_thick])
-    leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
+    leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, leyden_wall, leyden_base, leyden_terminal,  rod_thick, spark_ball,
             jar=1, cap=1, electrode=1);
     translate([-leyden_centre_offset+base_l/2,base_d/2+spark_support_centre,base_thick])
-    leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
+    leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, leyden_wall, leyden_base, leyden_terminal,  rod_thick, spark_ball,
             jar=1, cap=1, electrode=1);
     
     
@@ -1372,7 +1251,7 @@ module assembly()
 
     // p21 * 4
     if(part==20)
-            leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
+            leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, leyden_wall, leyden_base, leyden_terminal, 
             jar=0, cap=0, electrode=1);
 
     }
