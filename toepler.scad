@@ -6,6 +6,7 @@ use <libs/threads_v2.scad>
 
 include <es_disk.scad>
 include <leyden.scad>
+include <basic_shapes.scad>
 
 // if 1, assemble entire machine
 // if 0, just output the one part listed below
@@ -262,33 +263,6 @@ module support_polygon(upper, lower, height,  chamfer, rounded=1)
     }
 }
 
-// extrude the children to the given thickness
-// with a 45 degree chamfer of the given depth
-module chamfer_extrude(thick, chamfer)
-{
-    hull()
-    {
-        translate([0,0,chamfer])
-        linear_extrude(thick-2*chamfer)
-        {                    
-            children();
-        }
-        
-        translate([0,0,0])
-        linear_extrude(chamfer)
-        {              
-            offset(delta=-chamfer)
-            children();
-        }
-        
-        translate([0,0,thick-chamfer])
-        linear_extrude(chamfer)
-        {              
-            offset(delta=-chamfer)
-            children();
-        }                                                
-    }     
-}
 
 // pulley, with dimensions in mm
 module mmpulley(outer, inner, thick, belt_thick)
@@ -349,40 +323,6 @@ module brush(n_teeth, min_cut, max_cut, width, thick)
 
 
 
-// disk
-module disk_mask()
-{
-    rotate([0,180,0])
-    difference()
-    {
-        linear_extrude(tol)
-        {
-            circle(disk_radius);
-        }
-        
-        
-        union()
-        {
-            // sectors
-            for(i=[0:n_sectors])
-            {
-                rotate([0,0,(360/n_sectors)*i])
-                translate([sector_inner_rad,0,-disk_thick/2])
-                {
-                    flat_sector(sector_lower_size+tol, sector_upper_size+tol, sector_outer_rad-sector_inner_rad, sector_thick*100);
-                }
-            }
-            // cutout for the boss
-            translate([0,0,-disk_boss_length])
-                {
-                    cylinder(disk_boss_length+disk_thick, disk_boss_radius+tol, disk_boss_radius+tol); 
-                }
-            
-        }
-    }
-    
-    
-}
 
 // the disks
 
@@ -549,52 +489,6 @@ conductor_x = disk_x + conductor_offset;
 conductor_rad = disk_radius/(2.2);
 inductor_rad =  conductor_rad / 1.5;
 
-module cylinder_ep(p1, p2, r1, r2) {
-    hull() {
-        translate(p1)sphere(r=r1,center=true);
-        translate(p2)sphere(r=r2,center=true);
-    }
-}
-
-module cylinder_path(pts, rad)
-{
-    n = len(pts);
-    for(i=[0:n-2])
-    {
-        cylinder_ep(pts[i], pts[i+1], rad, rad);
-    }
-    
-}
-
-module squlinder(l, r1, r2)
-{
-    intersection()
-    {
-        translate([0,0,-tol])
-        cylinder(l,r1,r1);
-        cube([r2*2,100,200], center=true);
-    }
-    
-}
-
-module dowel(dlen, dowel_rad=5, male=1)
-{
-    rad = male ? dowel_rad : dowel_rad + tol;
-    length = male ? dlen : dlen + tol;
-    translate([0,0,-dowel_rad*0.25])    
-    if(male)        
-        chamferCylinder(length, rad, rad, dowel_rad*0.25);
-    else
-        cylinder(length, rad, rad);
-}
-
-module dowel_set(length, spacing, n, rad=5, male=1)
-{
-    
-    for(i=[1:n])
-    translate([i*spacing - ((n+1)/2)*spacing,0,0])
-        dowel(length, rad, male);
-}
 
 module conductor(induct)
 {

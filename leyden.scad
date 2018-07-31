@@ -1,9 +1,10 @@
 
+
 // the cap of a leyden jar
 module leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h, rod_thick, leyden_rad)
 {
     cap_h = base;
-    translate([0,0,base-cap_h+wall_thick])
+    translate([0,0,base-cap_h])
     // cap
     difference()
     {
@@ -22,6 +23,7 @@ module leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h, rod
             }
             
             // terminal
+            
             translate([0,0,base-chamfer])
             {
                 intersection()
@@ -39,10 +41,11 @@ module leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h, rod
     }        
 }
 
+
 // electrode sticking up from cap (slots through)
-module leyden_electrode(base, terminal_h, rod_thick, spark_ball)
+module leyden_electrode(base, terminal_h, rod_thick, spark_ball, wall_thick, base_rad)
 {
-    translate([0,0,0])       
+    
     color("SlateGray")          
     difference()
     {
@@ -51,7 +54,10 @@ module leyden_electrode(base, terminal_h, rod_thick, spark_ball)
                 cylinder(terminal_h+base, rod_thick, rod_thick);            
                 translate([0,0,terminal_h+base])
                 {
-                        sphere(spark_ball);                    
+
+                        //sphere(spark_ball);  
+                        torus_ball(spark_ball, rod_thick);
+                                               
                 }
             }
         rotate([0,90,0])
@@ -59,6 +65,13 @@ module leyden_electrode(base, terminal_h, rod_thick, spark_ball)
         cylinder(100, rod_thick+tol, rod_thick+tol);
                     
     }
+
+    //stopper 
+    translate([0,0,base+wall_thick+tol+base_rad/4])
+    color("SlateGray")    
+    
+    ntorus(rod_thick, spark_ball, 1);
+    
 }
 
 module leyden_jar(chamfer, base, base_rad, leyden_h, leyden_rad, conduct_h, wall_thick)
@@ -111,14 +124,14 @@ module leyden(leyden_h, leyden_rad, leyden_chamfer, leyden_conduct_h, wall_thick
     if(electrode)
     {
        translate([0,0,leyden_h])
-       leyden_electrode(base, terminal_h, rod_thick, rod_connector_rad);
+       leyden_electrode(base, terminal_h, rod_thick, rod_connector_rad, wall_thick, base_rad);
     }
      
 }
 
 // demo
-/* 
+ 
 use <libs/Chamfer.scad>
+use <basic_shapes.scad>
 tol = 0.2;
-leyden(200, 40, 10, 100, 1, 50, 100, 5, 16, 1, 1, 1);
-*/
+leyden(200, 40, 5, 100, 5, 50, 100, 4, 16, 0, 0, 1);

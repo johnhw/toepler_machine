@@ -47,7 +47,13 @@ module es_disk_boss(disk_boss_length, disk_boss_radius, chamfer)
 {
     translate([0,0,-disk_boss_length])
     {
-        chamferCylinder(disk_boss_length, disk_boss_radius, disk_boss_radius, chamfer); 
+        intersection()
+        {
+            // slice off chamfer on back, so lies perfectly flat on disk
+            cylinder(disk_boss_length, disk_boss_radius, disk_boss_radius);
+            translate([0,0,chamfer])
+            chamferCylinder(disk_boss_length, disk_boss_radius, disk_boss_radius, chamfer); 
+        }
     }    
 }
 
@@ -111,3 +117,9 @@ module es_disk_mask(mask_thick, disk_radius, n_sectors, sector_inner_rad, sector
     }        
 }
 
+/*
+use <libs/Chamfer.scad>
+tol = 0.2;
+es_disk(disk_thick=1, disk_radius=150, n_sectors=32, sector_inner_rad=70, sector_outer_rad=130, sector_lower_size=5, sector_upper_size=8, sector_thick=2, flat=1);
+es_disk_boss(20, 30, 4); 
+*/
