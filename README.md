@@ -1,6 +1,16 @@
 # toepler_machine
 A prototype design for a Toepler electrostatic machine in OpenSCAD. Intended to be 3D printed and electroplated.
 
+## OpenSCAD version
+2015.03-2
+
+## Colour code
+* yellow: insulating support
+* gray: conductor
+* white: critical insulator
+* green: insulated moving part
+* lightblue: mask, not in position
+
 # Modules used
 See the `lib/` folder:
 

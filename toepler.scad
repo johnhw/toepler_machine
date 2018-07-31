@@ -1,21 +1,50 @@
-include <pulleys.scad>
-use <Chamfer.scad>
-use <parametric_involute_gear_v5.0.scad>
-use <bearing.scad>
-use <threads_v2.scad>
+include <libs/pulleys.scad>
+use <libs/Chamfer.scad>
+use <libs/parametric_involute_gear_v5.0.scad>
+use <libs/bearing.scad>
+use <libs/threads_v2.scad>
 
+// if 1, assemble entire machine
+// if 0, just output the one part listed below
+assembled = 1;
+
+// part selector; used to output individual parts
+// not used if assembled is 1
 part = 6;
 
+// scaling factor; if this is changed
+// the measurements are not mm anymore!
+test_scale = 1.0; 
 
-
-
-// overall size of the board
-base_l = 195;
-base_d = 160;
-base_thick = 10;
+//////// Main configuration
+//////// All dimensions in mm
 
 // global fit tolerance
 tol = 0.2;
+
+// smoothness of rounded surfaces
+$fn = 16;
+
+////////////////////////////////
+// If these are defined, threads are replaced with simple cylinders
+// for faster rendering/previewing
+
+module ScrewThread(dia, len)
+{
+    cylinder(len, dia/2, dia/2);
+}
+
+module PositiveScrewHole(dia, len)
+{
+    cylinder(len, dia/2+tol, dia/2+tol);
+}
+//////////////////////////////
+
+// overall size of the base board
+base_l = 195;
+base_d = 160;
+base_thick = 10;
+base_chamfer = 3;
 
 // clearance from bottom of disk the top of the board
 disk_clearance = 25;
@@ -31,20 +60,57 @@ axle_diam = 3;
 
 // thickness of pulleys/gears
 pulley_thick = 3;
+
 // thickness of rubbed band for pulleys
 band_thick = 1;
 
-// thickness of the supports
+// thickness of the end supports
 support_thick = base_thick*2;
 
+// chamfer depth on end support
+support_chamfer = 2;
+
+// thickness of all conductive rods
+rod_thick = 3;
+
+////////////////////////////// handle
+// thickness of handle
+handle_thick = 3;
+
+// length of the handle turning radius
+handle_len = base_d*0.3;
+
+// clearance of handle from bottom of surface
+handle_clearance = 15;
+
+// height of the handle from the floor level 
+handle_h = handle_len + handle_clearance;
+
+// how far the handle sticks out
+handle_protrude = handle_len/3;
+
+//////////////////////////////////////////
+
+/////////////// Dowels for holding supports onto base
+// length of dowels above surface
+support_dowel_length = 19;
+
+// spacing between dowel centres
+support_dowel_spacing = 30;
+
+// number of dowels
+support_dowel_n = 3;
+
+// radius of dowels
+support_dowel_rad = 3.0;
+
+/////////// Disk and sector specification
 // offset of the disk from the back of the supports
 disk_offset = 20;
-
 
 // dimensions of the boss on the disk
 disk_boss_radius = disk_radius * 0.125;
 disk_boss_length = disk_boss_radius / 2;
-
 
 //////// sector specification
 sector_inner_rad = disk_radius * 0.6;
@@ -60,11 +126,13 @@ lower_rake = 1.;
 
 // thickness of sectors
 sector_thick = 0.6;
+////////////////////////////////////////////////////////
 
+/////////////////////////////////////////// spark arms
 
-////// spark arms
-// thickness of all conductive rods
-rod_thick = 3;
+// spark support screw thread dimensions
+spark_support_thread_dia = 5;
+spark_support_thread_len = 20;
 
 // spark arm
 rod_angle = 40; // angle of arms
@@ -72,42 +140,84 @@ spark_gap = 0; // fixed gap
 spark_gap_ball = 12; // end ball radius
 spark_gap_micro_ball = 4; // discharge ball radius
 
-
-
 // length of the pull arm
 pull_arm_len = 80;
 
 // rise of spark arm above main conductor lines
 spark_rise = 30;
 
-//////// pulleys / gears
+/////////////////////////////////// pulleys / gears
 pulleys = 1; // if 1, use pulleys, else use gears
 pulleys_inside = 0; // if 1, pulleys on inside of support, else outside
 pulley_ratio = 6;
 
-
 bearing_thick = 15;
 bearing_diameter = 51.7;
 
+///////////////////////////////// inductors
 
+// thickness of insulating plate inductor sits on
+conductor_thick = 3; 
 
-// computed constants
+// distance of inductor plate from the disk
+conductor_distance = 2;
+
+// thickness of the inductor itself
+inductor_thick = 0.5;
+
+// distance from conductor to disk
+conductor_standoff = 10;
+
+/////////////////////////////////// brushes
+
+// thickness of brush
+brush_thick = 0.5;
+
+// tooth cut depth
+brush_tooth_depth = 2;
+
+// number of teeth
+brush_teeth = 15;
+
+/////////////////////////////// leyden jars
+// leyden jars
+// height of leyden jar
+leyden_h = 70;
+// radius of leyden jar
+leyden_rad = 12;
+// wall thickness
+leyden_wall = 0.25;
+// height of base
+leyden_base = 10;
+
+// chamfer size
+leyden_chamfer = 4;
+
+// height of the conductor
+leyden_conduct_h = leyden_h * 0.7;
+
+// offset of leyden jars from centre of board
+leyden_centre_offset = 30;
+
+////////////////////////////////////////// computed constants
 axle_height = disk_radius + disk_clearance + base_thick;
 inner_circum = sector_inner_rad * 2 * PI;
 outer_circum = sector_outer_rad * 2 * PI;
 sector_lower_size = lower_rake * sector_spacing*0.5*inner_circum/n_sectors;
 sector_upper_size = upper_rake * sector_spacing*0.5*outer_circum/n_sectors;
 
+///////// Brush
+// width of brush
+brush_width = disk_radius/3;
 
-$fn = 64;
-
+// length of brush (to touch disk)
+brush_extend = conductor_standoff+rod_thick+tol;
 
 // axle
 module axle(h, r)
 {
     cylinder(h,r,r,$fn=6);    
 }
-
 
 // a cylinder the same dimensions as the bearing hull
 module std_bearing_blank()
@@ -121,7 +231,6 @@ module std_bearing()
 {
     gear_bearing(axle_diam*2+tol, bearing_thick, bearing_diameter);          
 }
-
 
 // rounded trapezoid
 module support_polygon(upper, lower, height,  chamfer, rounded=1)
@@ -149,30 +258,29 @@ module support_polygon(upper, lower, height,  chamfer, rounded=1)
 // with a 45 degree chamfer of the given depth
 module chamfer_extrude(thick, chamfer)
 {
-           hull()
-            {
-                translate([0,0,chamfer])
-                linear_extrude(thick-2*chamfer)
-                {                    
-                    children();
-                }
-                
-                translate([0,0,0])
-                linear_extrude(chamfer)
-                {              
-                    offset(delta=-chamfer)
-                    children();
-                }
-                
-                translate([0,0,thick-chamfer])
-                linear_extrude(chamfer)
-                {              
-                    offset(delta=-chamfer)
-                    children();
-                }                                                
-            }     
+    hull()
+    {
+        translate([0,0,chamfer])
+        linear_extrude(thick-2*chamfer)
+        {                    
+            children();
+        }
+        
+        translate([0,0,0])
+        linear_extrude(chamfer)
+        {              
+            offset(delta=-chamfer)
+            children();
+        }
+        
+        translate([0,0,thick-chamfer])
+        linear_extrude(chamfer)
+        {              
+            offset(delta=-chamfer)
+            children();
+        }                                                
+    }     
 }
-
 
 // pulley, with dimensions in mm
 module mmpulley(outer, inner, thick, belt_thick)
@@ -206,7 +314,6 @@ module washer(inner, outer, thick)
         }
     }
 }
-
 
 // create a simple brush
 module brush(n_teeth, min_cut, max_cut, width, thick)
@@ -272,9 +379,6 @@ module sector(low_rad, high_rad, sector_len, thick)
     }
     
 }
-
-
-
 
 // disk
 module disk()
@@ -345,19 +449,11 @@ module disk_mask()
     
 }
 
-
-
-
 // the disks
 
-
 disk_x = -base_l/2+support_thick+disk_offset;
-
-
 axle_inset = 0;
 axle_extend = pulley_thick * 2 ;
-
-
 
 /////////////////
 // conductor guide that supports the cross connecting rod
@@ -396,9 +492,6 @@ pin_radius = 2;
 spark_pin = 10;
 spark_ball = 8;
 
-
-
-
 spark_support_centre = -base_d/2+spark_radius+spark_inset;
 
 spark_span = spark_support_centre * -2;
@@ -408,37 +501,24 @@ rod_arm_len = (1.0/sin(rod_angle)) * (spark_span/2 - spark_gap_ball*1.52 - spark
 
 // length of the spark gap pull arm
 
-
 module spark_support_wodowel()
 {
     total_h = spark_h + spark_rise;
     cylinder(spark_h-base_thick, spark_radius, spark_radius);
-    
-   
-    
-    
-        
+
     translate([0,0,-1])
     chamferCylinder(support_thick*0.5+1, spark_radius*2, spark_radius*2);
     chamferCylinder(support_thick*1.5, spark_radius*1.5, spark_radius*1.5);
-    
-    
     // central connection ball
     translate([0,0,spark_h-base_thick])
     color("SlateGray")
-    
-        sphere(spark_ball);
-       
-        
-    
-    
-       color("SlateGray")
-        translate([0,0,spark_h-base_thick])    
-        cylinder(spark_rise+spark_ball*2, rod_thick, rod_thick);
-     
-    
-}
+    sphere(spark_ball);
 
+    color("SlateGray")
+    translate([0,0,spark_h-base_thick])    
+    cylinder(spark_rise+spark_ball*2, rod_thick, rod_thick);
+         
+}
 
 module spark_support()
 {
@@ -453,12 +533,11 @@ module spark_support()
         cylinder(200,rod_thick+tol,rod_thick+tol);
         }        
         translate([0,0,-1])
-        //dowel_set(31, 30, 1, rad=3.0, male=0);
-        PositiveScrewHole(5, 20);
+        //dowel_set(31, 30, 1, rad=3.0, male=0);        
+        PositiveScrewHole(spark_support_thread_dia, spark_support_thread_len);
     }
     
 }
-
 
 // distance of insulating pull arm back from connection
 // ball
@@ -466,29 +545,28 @@ pull_offset = 30;
 
 module discharge_ball(positive)
 {
-scale_factor = positive ? 1.25 : (1.0/1.25);
-color("SlateGray")
-translate([0,0,spark_gap_ball*scale_factor])
-{
-    difference()
-    {
-        scale(scale_factor)
-        sphere(spark_gap_ball);
-        rotate([0,180,0])
-        cylinder(200,rod_thick+tol, rod_thick+tol);
-    }
-
-
-if(positive)
-{
-    // micro ball
+    scale_factor = positive ? 1.25 : (1.0/1.25);
     color("SlateGray")
-        rotate([-(90-rod_angle),0,0])
-        translate([0,0,spark_gap_ball*scale_factor+spark_gap_micro_ball*0.25])
-        sphere(spark_gap_micro_ball);
-    
+    translate([0,0,spark_gap_ball*scale_factor])
+    {
+        difference()
+        {
+            scale(scale_factor)
+            sphere(spark_gap_ball);
+            rotate([0,180,0])
+            cylinder(200,rod_thick+tol, rod_thick+tol);
+        }
+
+    if(positive)
+    {
+            // micro ball
+            color("SlateGray")
+            rotate([-(90-rod_angle),0,0])
+            translate([0,0,spark_gap_ball*scale_factor+spark_gap_micro_ball*0.25])
+            sphere(spark_gap_micro_ball);
+        
+        }
     }
-}
 }
         
 
@@ -502,8 +580,7 @@ module spark_arm_x()
         color("LightBlue")
         cylinder(rod_arm_len, rod_thick, rod_thick);
         color("SlateGray")
-        cylinder(rod_arm_len*0.5, rod_thick, rod_thick);
-    
+        cylinder(rod_arm_len*0.5, rod_thick, rod_thick);    
 
         // pull arm
         rotate([-180,0,0])
@@ -522,7 +599,6 @@ module spark_arm_x()
            
 }
 
-
 module spark_arm()
 {
     difference()
@@ -533,23 +609,9 @@ module spark_arm()
     }
 }
 
-
-
-
-
-
-
-
-
-conductor_thick = 3;
-conductor_distance = 2;
 conductor_offset =  conductor_distance + conductor_thick + disk_thick;
-
 conductor_x = disk_x + conductor_offset;
-
 conductor_rad = disk_radius/(2.2);
-
-inductor_thick = 0.5;
 inductor_rad =  conductor_rad / 1.5;
 
 module cylinder_ep(p1, p2, r1, r2) {
@@ -569,22 +631,6 @@ module cylinder_path(pts, rad)
     
 }
 
-   
-// distance from conductor to disk
-conductor_standoff = 10;
-
-///////// Brush
-// width of brush
-brush_width = disk_radius/3;
-// thickness of brush
-brush_thick = 0.5;
-// length of brush (to touch disk)
-brush_extend = conductor_standoff+rod_thick+tol;
-// tooth cut depth
-brush_tooth_depth = 2;
-// number of teeth
-brush_teeth = 15;
-
 module squlinder(l, r1, r2)
 {
     intersection()
@@ -595,7 +641,6 @@ module squlinder(l, r1, r2)
     }
     
 }
-
 
 module dowel(dlen, dowel_rad=5, male=1)
 {
@@ -608,7 +653,6 @@ module dowel(dlen, dowel_rad=5, male=1)
         cylinder(length, rad, rad);
 }
 
-
 module dowel_set(length, spacing, n, rad=5, male=1)
 {
     
@@ -616,8 +660,6 @@ module dowel_set(length, spacing, n, rad=5, male=1)
     translate([i*spacing - ((n+1)/2)*spacing,0,0])
         dowel(length, rad, male);
 }
-
-
 
 module conductor(induct)
 {
@@ -665,16 +707,9 @@ module conductor(induct)
             }
         }
         }
-        
-       
-
- 
-        
     }
     
 }
-
-
 
 // how far conductor extends beyond spark shield
 conductor_extend = 10;
@@ -690,12 +725,8 @@ module brush_arm()
             [0,0,-conductor_x-rod_thick],
             [0,conductor_outside,-conductor_x-rod_thick],
             [0,conductor_outside,-disk_x+conductor_standoff+rod_thick],
-            [0,0,-disk_x+conductor_standoff+rod_thick],
-            
-            
-            ], rod_thick);
-            
-            
+            [0,0,-disk_x+conductor_standoff+rod_thick],                        
+            ], rod_thick);                        
     }
         
 }
@@ -731,12 +762,6 @@ module neutral()
             
 }
 
-
-
-
-
-
-
 // supports
 support_above_axle = disk_clearance;
 support_h = axle_height + support_above_axle;
@@ -749,30 +774,9 @@ support_thin = 0.5;
 support_rim = 5;
 support_upper_w = bearing_diameter/2 + support_rim;
 
-// handle
-handle_thick = 3;
-handle_len = support_w*0.6;
-
-handle_clearance = 15;
-handle_h = handle_len + handle_clearance;
-handle_protrude = handle_len/3;
-
-support_chamfer = 2;
-
-
-
-
-
 handle_axle_insert = (pulleys_inside) ? support_thick + pulley_thick + tol  : support_thick + bearing_thick; 
 
 // how far the handle extends into the support
-
-
-support_dowel_length = 19;
-support_dowel_spacing = 30;
-support_dowel_n = 3;
-support_dowel_rad = 3.0;
-
 
 module support(open)
 {
@@ -839,40 +843,40 @@ module support(open)
 module base()
 {
 
-{
-    chamfer = 3;
-    translate([-chamfer,-chamfer,0])
+    
+    translate([-base_chamfer,-base_chamfer,0])
     {
-        chamferCube(base_l+2*chamfer, base_d+2*chamfer, base_thick, chamfer);
+        chamferCube(base_l+2*base_chamfer, base_d+2*base_chamfer, base_thick, base_chamfer);
     }
     
     translate([0,0,base_thick])
     {
-    rad = support_dowel_rad;
-    translate([support_thick-rad,base_d/2,0])
-    rotate([0,0,90])
-    dowel_set(support_dowel_length, support_dowel_spacing, support_dowel_n, rad=support_dowel_rad, male=1);
-    
-    translate([base_l-support_thick+rad,base_d/2,0])
-    rotate([0,0,90])
-    dowel_set(support_dowel_length, support_dowel_spacing, support_dowel_n, rad=support_dowel_rad, male=0);
-    
-    translate([base_l/2,base_d/2+spark_support_centre,0])
-    
-     ScrewThread(5, 20);
-    
-    translate([base_l/2,base_d/2-spark_support_centre,0])
-     ScrewThread(5, 20);
-    
-    
-    
-    translate([base_l/2, base_d/2, 0])
-    guide();
+        rad = support_dowel_rad;
+        translate([support_thick-rad,base_d/2,0])
+        rotate([0,0,90])
+        dowel_set(support_dowel_length, support_dowel_spacing, support_dowel_n, rad=support_dowel_rad, male=1);
+        
+        translate([base_l-support_thick+rad,base_d/2,0])
+        rotate([0,0,90])
+        dowel_set(support_dowel_length, support_dowel_spacing, support_dowel_n, rad=support_dowel_rad, male=0);
+        
+        translate([base_l/2,base_d/2+spark_support_centre,0])
+        
+        
+        
+        ScrewThread(spark_support_thread_dia, spark_support_thread_len);    
+        translate([base_l/2,base_d/2-spark_support_centre,0])
+        ScrewThread(spark_support_thread_dia, spark_support_thread_len);
+
+        
+        
+        
+        translate([base_l/2, base_d/2, 0])
+        guide();
     }
     
-}
-}
 
+}
 
 // handle
 
@@ -881,7 +885,6 @@ gear_offset_x = (pulleys_inside) ? pulley_offset_x - pulley_thick : 0;
 
 washer_thick = 1;
 
-    
 module handle()
 {
     handle_offset = 2 + pulley_thick*2 + tol*2;
@@ -927,30 +930,6 @@ module handle()
     }
     
 }
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-// leyden jars
-leyden_h = 70;
-leyden_rad = 12;
-leyden_wall = 0.25;
-leyden_base = 10;
-leyden_chamfer = 4;
-leyden_conduct_h = leyden_h * 0.7;
-
 
 module leyden_cap(base, base_rad, chamfer, leyden_h, wall_thick, terminal_h)
 {
@@ -1075,14 +1054,13 @@ module leyden(leyden_h, leyden_rad, wall_thick, base, terminal_h, jar=1, cap=1, 
      
 }
 
-leyden_x = 30;
 leyden_terminal = spark_h - (leyden_h+leyden_base+base_thick);
 
 use_leyden = 1;
 leyden_jars = 1;
 leyden_caps = 1;
 
-assembled = 1;
+
 
 module spark_supports()
 {
@@ -1095,16 +1073,16 @@ module spark_supports()
 
 module leyden_jars()
 {
-    translate([-leyden_x+base_l/2,base_d/2-spark_support_centre,base_thick])
+    translate([-leyden_centre_offset+base_l/2,base_d/2-spark_support_centre,base_thick])
     leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=1, cap=1, electrode=1);
-    translate([leyden_x+base_l/2,base_d/2-spark_support_centre,base_thick])
+    translate([leyden_centre_offset+base_l/2,base_d/2-spark_support_centre,base_thick])
     leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=1, cap=1, electrode=1);
-    translate([leyden_x+base_l/2,base_d/2+spark_support_centre,base_thick])
+    translate([leyden_centre_offset+base_l/2,base_d/2+spark_support_centre,base_thick])
     leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=1, cap=1, electrode=1);
-    translate([-leyden_x+base_l/2,base_d/2+spark_support_centre,base_thick])
+    translate([-leyden_centre_offset+base_l/2,base_d/2+spark_support_centre,base_thick])
     leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=1, cap=1, electrode=1);
     
@@ -1212,7 +1190,6 @@ module conductors()
             brush_fit(0);       
         }
 
-
         rotate([0,0,180])
         {
             translate([0,spark_support_centre,spark_h])
@@ -1221,7 +1198,6 @@ module conductors()
                 brush_fit(0);
             }           
         }
-
 
         translate([0,-spark_support_centre,spark_h])
         {
@@ -1318,47 +1294,33 @@ translate([0, base_d/2, 0])
     }
 }
 
+
 module handle_grip()
 {
        translate([-pulley_thick+tol*2,base_d/2,handle_h])    
     handle();
 }
 
-
-if(assembled==1)
+module assembly()
 {
-    
-    base();    
-    
-    spark_supports();
-    
-    leyden_jars();
-    
-    neutralizer();
-    
-    supports();
-    
-    bearings();
-    
-    small_pulley();
-    large_pulley();
-    
-    conductors();
-    
-    spark_arms();
-   
-    main_axle();
-    
-    disks();
-    
-   
-    handle_grip();
-        
-}
-else
-{    
-    scale([test_scale, test_scale, test_scale])
-    {
+    if(assembled==1)
+    {    
+        base();        
+        spark_supports();    
+        leyden_jars();    
+        neutralizer();    
+        supports();    
+        bearings();    
+        small_pulley();
+        large_pulley();    
+        conductors();    
+        spark_arms();   
+        main_axle();    
+        disks();       
+        handle_grip();        
+    }
+    else
+    {    
 
     // p1
     if(part==0)
@@ -1371,9 +1333,8 @@ else
     // p3 * 2
     if(part==2)
         spark_support();
-      
-      
-
+    
+    
 
     // p4 * 4
     if(part==3)
@@ -1386,15 +1347,10 @@ else
             leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=0, cap=1, electrode=0);
 
-
     // p6 * 2
     if(part==5)
-    {
-        
-            
-            neutral();
-        
-         
+    {                    
+            neutral();                
     }
 
     // p7
@@ -1403,11 +1359,8 @@ else
 
     // p8
     if(part==7)
-        //rotate([0,180,180])
-        //{        
-            support(0);
-        //}
-
+        support(0);
+     
     // p9 
     if(part==8)
         base();
@@ -1419,7 +1372,7 @@ else
     // p11
     if(part==10)
         mmpulley(handle_len*2/pulley_ratio,axle_diam+tol,pulley_thick,band_thick);
-       
+    
     // p12
     if(part==11)
         mmpulley(handle_len*2,axle_diam+tol,  
@@ -1428,7 +1381,6 @@ else
     // p13
     if(part==12)
         conductor(0);
-
 
     // p14 * 2
     if(part==13)
@@ -1448,7 +1400,7 @@ else
     {
         rotate([90,0,90])
         {
-            axle(base_l-support_thick-tol*2+pulley_thick*2  , axle_diam);
+            axle(base_l - support_thick - tol * 2 + pulley_thick * 2, axle_diam);
         }
     }
 
@@ -1456,21 +1408,24 @@ else
     if(part==17)
         disk();
 
-
     // p19
     if(part==18)
-    handle();
-    }
+        handle();
+    
 
     // p20 * 2
     if(part==19)
     {
-    disk_mask();
+        disk_mask();
     }
-
 
     // p21 * 4
     if(part==20)
             leyden(leyden_h, leyden_rad, leyden_wall, leyden_base, leyden_terminal, 
             jar=0, cap=0, electrode=1);
+
+    }
 }
+
+scale([test_scale, test_scale, test_scale])
+assembly();
