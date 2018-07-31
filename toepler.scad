@@ -4,6 +4,8 @@ use <libs/parametric_involute_gear_v5.0.scad>
 use <libs/bearing.scad>
 use <libs/threads_v2.scad>
 
+include <es_disk.scad>
+
 // if 1, assemble entire machine
 // if 0, just output the one part listed below
 assembled = 1;
@@ -54,6 +56,10 @@ disk_radius = base_d-70;
 
 // thickness of disks
 disk_thick = 1.0;
+
+
+// thickness of disk sector mask (should be very thin)
+disk_mask_thick = 0.2;
 
 // radius of main axle
 axle_diam = 3;
@@ -111,6 +117,7 @@ disk_offset = 20;
 // dimensions of the boss on the disk
 disk_boss_radius = disk_radius * 0.125;
 disk_boss_length = disk_boss_radius / 2;
+disk_boss_chamfer = 1.0;
 
 //////// sector specification
 sector_inner_rad = disk_radius * 0.6;
@@ -338,81 +345,8 @@ module brush(n_teeth, min_cut, max_cut, width, thick)
 }    
 }
 
-// completely flat extruded sector
-module flat_sector(low_rad, high_rad, sector_len, thick)
-{
-    color("SlateGray")
-    linear_extrude(thick)
-    {
-        hull()
-        {
-            circle(low_rad);
-            translate([sector_len,0,0])
-            circle(high_rad);
-        }
-    }
-    
-}
 
-// rounded sector
-module sector(low_rad, high_rad, sector_len, thick)
-{
-    color("SlateGray")
-    
-    translate([0,0,thick])
-    intersection()
-    {
-        hull()
-        {
-            
-            scale([1,1,thick/low_rad])
-            sphere(low_rad);
-                
-            
-            translate([sector_len,0,0])
-            scale([1,1,thick/low_rad])
-            sphere(high_rad);                                    
-        }
-      //rotate([0,180,0])
-     cylinder(200, 200, 200);   
-         
-    }
-    
-}
 
-// disk
-module disk()
-{
-    rotate([0,180,0])
-        difference()
-        {
-            union()
-            {
-                linear_extrude(disk_thick)
-                {
-                    circle(disk_radius);
-                }
-                translate([0,0,-disk_boss_length])
-                {
-                    chamferCylinder(disk_boss_length+disk_thick, disk_boss_radius, disk_boss_radius, 1); 
-                }
-            }
-            translate([0,0,-100])
-            axle(200, axle_diam+tol);
-        }
-        
-        // sectors
-        for(i=[0:n_sectors])
-        {
-            rotate([0,0,(360/n_sectors)*i])
-            translate([sector_inner_rad,0,-disk_thick/2])
-            {
-                sector(sector_lower_size, sector_upper_size, sector_outer_rad-sector_inner_rad, sector_thick);
-            }
-        }
-    
-    
-}
 
 // disk
 module disk_mask()
@@ -1263,34 +1197,51 @@ module main_axle()
     }
 }
 
+module disk_mask()
+{
+    es_disk_mask(disk_mask_thick, disk_radius, n_sectors, sector_inner_rad, sector_outer_rad, sector_lower_size, sector_upper_size, disk_boss_radius);
+}
+
+module disk_with_boss()
+{
+    difference()
+    {
+        union()
+        {
+            es_disk(disk_thick, disk_radius, n_sectors, sector_inner_rad, sector_outer_rad, sector_lower_size, sector_upper_size, sector_thick, 0);
+            es_disk_boss(disk_boss_length, disk_boss_radius, disk_boss_chamfer);            
+        }
+        translate([0,0,-100])
+        axle(200, axle_diam+tol);
+    }
+}
+
 module disks()
 {
     disk_x = support_thick+disk_offset;
 
-translate([0, base_d/2, 0])
+    translate([0, base_d/2, 0])
     {
-    translate([disk_x,0,axle_height])
-    {
-        rotate([180,90,0])
-        {
-            disk();
-            translate([0,0,5])
-            disk_mask();
-        }
-    }
-
-    translate([base_l-disk_x,0,axle_height])
-    {
-        rotate([0,0,0])
+        translate([disk_x,0,axle_height])
         {
             rotate([0,90,0])
             {
-                disk();
-                translate([0,0,5])
+                disk_with_boss();
                 disk_mask();
             }
         }
-    }
+
+        translate([base_l-disk_x,0,axle_height])
+        {
+            rotate([0,0,0])
+            {
+                rotate([180,90,0])
+                {
+                    disk_with_boss();             
+                    disk_mask();
+                }
+            }
+        }
     }
 }
 
@@ -1406,7 +1357,7 @@ module assembly()
 
     // p18
     if(part==17)
-        disk();
+        disk_with_boss();
 
     // p19
     if(part==18)
