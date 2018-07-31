@@ -49,15 +49,33 @@ module teardrop(len, start, end)
 }
 
 
-module torus_ball(radius, rod_thick)
+module torus_ball(radius, rod_thick, left=1, right=1, up=0, down=0)
 {
     sphere(radius);  
-    translate([radius-torus_radius(rod_thick, radius),0,0])
-    rotate([0,90,0])
-    ntorus(rod_thick, radius, 1);                  
-    translate([-radius+torus_radius(rod_thick, radius),0,0])
-    rotate([0,-90,0])
-    ntorus(rod_thick, radius, 1);     
+    if(left==1)
+    {
+        translate([radius-torus_radius(rod_thick, radius),0,0])
+        rotate([0,90,0])
+        ntorus(rod_thick, radius, 1);                  
+    }
+    if(right==1)
+    {
+        translate([-radius+torus_radius(rod_thick, radius),0,0])
+        rotate([0,-90,0])
+        ntorus(rod_thick, radius, 1);     
+    }
+    if(up==1)
+    {
+        translate([0,0,radius-torus_radius(rod_thick, radius)])
+        rotate([0,0,0])
+        ntorus(rod_thick, radius, 1);     
+    }
+    if(down==1)
+    {
+        translate([0,0,-radius+torus_radius(rod_thick, radius)])
+        rotate([0,180,0])
+        ntorus(rod_thick, radius, 1);     
+    }
 }
 
 // extrude the children to the given thickness

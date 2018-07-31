@@ -27,7 +27,7 @@ test_scale = 1.0;
 tol = 0.2;
 
 // smoothness of rounded surfaces
-$fn = 16;
+$fn = 12;
 
 ////////////////////////////////
 // If these are defined, threads are replaced with simple cylinders
@@ -45,7 +45,7 @@ module PositiveScrewHole(dia, len)
 //////////////////////////////
 
 // overall size of the base board
-base_l = 195;
+base_l = 225;
 base_d = 160;
 base_thick = 10;
 base_chamfer = 3;
@@ -74,6 +74,10 @@ band_thick = 1;
 
 // thickness of the end supports
 support_thick = base_thick*2;
+
+// minimum thickness of support (around the circumference); used to find the
+// position to fit the width of the support
+support_min_thick = 5;
 
 // chamfer depth on end support
 support_chamfer = 2;
@@ -169,13 +173,11 @@ bearing_diameter = 51.7;
 conductor_thick = 3; 
 
 // distance of inductor plate from the disk
-conductor_distance = 2;
+conductor_distance = 1;
 
 // thickness of the inductor itself
 inductor_thick = 0.5;
 
-// distance from conductor to disk
-conductor_standoff = 10;
 
 /////////////////////////////////// brushes
 
@@ -187,6 +189,10 @@ brush_tooth_depth = 2;
 
 // number of teeth
 brush_teeth = 15;
+
+// distance from conductor to disk
+brush_standoff_depth = 10;
+
 
 /////////////////////////////// leyden jars
 // leyden jars
@@ -220,7 +226,7 @@ sector_upper_size = upper_rake * sector_spacing*0.5*outer_circum/n_sectors;
 brush_width = disk_radius/3;
 
 // length of brush (to touch disk)
-brush_extend = conductor_standoff+rod_thick+tol;
+brush_extend = brush_standoff_depth+rod_thick+tol;
 
 // axle
 module axle(h, r)
@@ -376,6 +382,7 @@ rod_arm_len = (1.0/sin(rod_angle)) * (spark_span/2 - spark_gap_ball*1.52 - spark
 
 // length of the spark gap pull arm
 
+// the spark support, from the base to the angled spark gap arms
 module spark_support_wodowel()
 {
     total_h = spark_h + spark_rise;
@@ -387,7 +394,7 @@ module spark_support_wodowel()
     // central connection ball
     translate([0,0,spark_h-base_thick])
     color("SlateGray")
-    sphere(spark_ball);
+    torus_ball(spark_ball, rod_thick, up=1);
 
     color("SlateGray")
     translate([0,0,spark_h-base_thick])    
@@ -403,10 +410,11 @@ module spark_support()
         
         translate([0,0,spark_h-base_thick])
         {
-        rotate([0,90,0])    
-        translate([0,0,-100])       
-        cylinder(200,rod_thick+tol,rod_thick+tol);
+            rotate([0,90,0])    
+            translate([0,0,-100])       
+            cylinder(200,rod_thick+tol,rod_thick+tol);
         }        
+
         translate([0,0,-1])
         //dowel_set(31, 30, 1, rad=3.0, male=0);        
         PositiveScrewHole(spark_support_thread_dia, spark_support_thread_len);
@@ -493,7 +501,6 @@ inductor_rad =  conductor_rad / 1.5;
 module conductor(induct)
 {
     
-   //translate([0,0,-(conductor_thick+conductor_x)])
     rotate([0,90,0])
     {
         
@@ -517,15 +524,14 @@ module conductor(induct)
                 {
                     union()
                     {
-                    sphere(spark_ball);
-                    // horizontal connector bar
-        
-                    
+                        rotate([0,90,90])                        
+                        torus_ball(spark_ball, rod_thick, down=0, left=1, up=0);
                     }
+                    // cut hole for the brush arm to come round
                     if(induct)
                     {
                         translate([0,0,-rod_thick-tol])                    
-                        rotate([90,0,0])
+                        rotate([-90,0,0])
                         translate([0,0,-rod_thick])
                         cylinder(200, rod_thick+tol, rod_thick+tol, center=false);
                     }
@@ -553,8 +559,8 @@ module brush_arm()
             cylinder_path([
             [0,0,-conductor_x-rod_thick],
             [0,conductor_outside,-conductor_x-rod_thick],
-            [0,conductor_outside,-disk_x+conductor_standoff+rod_thick],
-            [0,0,-disk_x+conductor_standoff+rod_thick],                        
+            [0,conductor_outside,-disk_x+brush_standoff_depth+rod_thick],
+            [0,0,-disk_x+brush_standoff_depth+rod_thick],                        
             ], rod_thick);                        
     }
         
@@ -573,13 +579,13 @@ module neutral()
             //difference()
            // {
             cylinder_path([            
-                [spark_h,0,-disk_x+conductor_standoff+rod_thick],
-                [spark_h, conductor_outside,-disk_x+conductor_standoff+rod_thick],
-                [base_h, conductor_outside,-disk_x+conductor_standoff+rod_thick],
-                [base_h,spark_support_centre,0.5*(-disk_x+conductor_standoff+rod_thick)],            [base_h,spark_support_centre,0],                                     
+                [spark_h,0,-disk_x+brush_standoff_depth+rod_thick],
+                [spark_h, conductor_outside,-disk_x+brush_standoff_depth+rod_thick],
+                [base_h, conductor_outside,-disk_x+brush_standoff_depth+rod_thick],
+                [base_h,spark_support_centre,0.5*(-disk_x+brush_standoff_depth+rod_thick)],            [base_h,spark_support_centre,0],                                     
                 ], rod_thick);
                 
-//             translate(base_h, spark_support_centre,0.5*(-disk_x+conductor_standoff+rod_thick));
+//             translate(base_h, spark_support_centre,0.5*(-disk_x+brush_standoff_depth+rod_thick));
             //rotate([3,0,0])
            // cube(500);
             //}
@@ -597,11 +603,8 @@ support_h = axle_height + support_above_axle;
 
 support_w = base_d * 0.5;
 support_lower_w = support_w / 1.5;
-support_thin = 0.5;
-//support_upper_w = support_lower_w * support_thin;
 
-support_rim = 5;
-support_upper_w = bearing_diameter/2 + support_rim;
+support_upper_w = bearing_diameter/2 + support_min_thick;
 
 handle_axle_insert = (pulleys_inside) ? support_thick + pulley_thick + tol  : support_thick + bearing_thick; 
 
@@ -734,9 +737,7 @@ module handle()
     // handle grip
    
     translate([-handle_offset,handle_len,0])
-    {
-        
-        
+    {            
         rotate([0,-90,0])
         {
             
@@ -876,7 +877,7 @@ module brush_fit(induct)
 {
     rotate([0,90,0])
     color("SlateGray")
-    translate([0,induct ? brush_width/2 : -brush_width/2,-disk_x+conductor_standoff+rod_thick])
+    translate([0,induct ? brush_width/2 : -brush_width/2,-disk_x+brush_standoff_depth+rod_thick])
     {
         rotate([-90,0,90])
         {

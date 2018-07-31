@@ -56,7 +56,7 @@ module leyden_electrode(base, terminal_h, rod_thick, spark_ball, wall_thick, bas
                 {
 
                         //sphere(spark_ball);  
-                        torus_ball(spark_ball, rod_thick);
+                        torus_ball(spark_ball, rod_thick, down=1);
                                                
                 }
             }
@@ -76,9 +76,12 @@ module leyden_electrode(base, terminal_h, rod_thick, spark_ball, wall_thick, bas
 
 module leyden_jar(chamfer, base, base_rad, leyden_h, leyden_rad, conduct_h, wall_thick)
 {
+    lip_rad = 8;
+
     translate([0,0,-chamfer])
         chamferCylinder(base+chamfer, base_rad, base_rad, chamfer);
     translate([0,0,base])
+
     difference()
     {
         union()
@@ -89,6 +92,12 @@ module leyden_jar(chamfer, base, base_rad, leyden_h, leyden_rad, conduct_h, wall
             // exterior conductor
             color("SlateGray")
             cylinder(conduct_h , leyden_rad+tol, leyden_rad+tol);
+
+            // "roll top"
+            color("SlateGray")
+            translate([0,0,conduct_h])            
+            scale([1,1,0.5])
+            sphere(leyden_rad*1.08);
         }            
         
         translate([0,0,wall_thick])
