@@ -20,6 +20,16 @@ part = 6;
 // the measurements are not mm anymore!
 test_scale = 1.0; 
 
+/// key flags
+
+// if true, then the connecting rods will be included
+with_rods = true;
+
+// if true, then spherical connectors will have torii attached
+with_torii = true;
+
+
+
 //////// Main configuration
 //////// All dimensions in mm
 
@@ -47,7 +57,7 @@ module PositiveScrewHole(dia, len)
 // overall size of the base board
 base_l = 225;
 base_d = 160;
-base_thick = 10;
+base_thick = 5;
 base_chamfer = 3;
 
 // clearance from bottom of disk the top of the board
@@ -73,7 +83,7 @@ pulley_thick = 3;
 band_thick = 1;
 
 // thickness of the end supports
-support_thick = base_thick*2;
+support_thick = 20;
 
 // minimum thickness of support (around the circumference); used to find the
 // position to fit the width of the support
@@ -178,6 +188,9 @@ conductor_distance = 1;
 // thickness of the inductor itself
 inductor_thick = 0.5;
 
+// how far conductor extends beyond spark shield
+conductor_extend = 10;
+
 
 /////////////////////////////////// brushes
 
@@ -224,6 +237,13 @@ sector_upper_size = upper_rake * sector_spacing*0.5*outer_circum/n_sectors;
 ///////// Brush
 // width of brush
 brush_width = disk_radius/3;
+
+disk_x = -base_l/2+support_thick+disk_offset;
+conductor_offset =  conductor_distance + conductor_thick + disk_thick;
+conductor_x = disk_x + conductor_offset;
+conductor_rad = brush_width;
+inductor_rad =  conductor_rad / 1.5;
+
 
 // length of brush (to touch disk)
 brush_extend = brush_standoff_depth+rod_thick+tol;
@@ -335,15 +355,15 @@ module brush(n_teeth, min_cut, max_cut, width, thick)
 
 // the disks
 
-disk_x = -base_l/2+support_thick+disk_offset;
+
 axle_inset = 0;
 axle_extend = pulley_thick * 2 ;
 
 /////////////////
 // conductor guide that supports the cross connecting rod
-conductor_guide_l = support_thick;
-conductor_guide_d = support_thick*3;
-conductor_guide_h = conductor_guide_l*0.75;
+conductor_guide_l = support_thick*0.25;
+conductor_guide_d = support_thick*3*0.5;
+conductor_guide_h = conductor_guide_l*4;
 
 module guide()
 {
@@ -351,12 +371,12 @@ module guide()
     {
        
     rotate([90,0,90])
-        chamfer_extrude(conductor_guide_l, 2)
+        chamfer_extrude(conductor_guide_l, 1)
         {
             
             support_polygon(conductor_guide_d/4, conductor_guide_d/2, conductor_guide_h/2, 2);
         }
-    translate([0,0,conductor_guide_h/2])
+         translate([0,0,conductor_guide_h/2])
         rotate([0,90,0])
         {
             cylinder(200, rod_thick+tol, rod_thick+tol);
@@ -495,10 +515,6 @@ module spark_arm()
     }
 }
 
-conductor_offset =  conductor_distance + conductor_thick + disk_thick;
-conductor_x = disk_x + conductor_offset;
-conductor_rad = disk_radius/(2.2);
-inductor_rad =  conductor_rad / 1.5;
 
 
 module conductor(induct)
@@ -550,8 +566,7 @@ module conductor(induct)
     
 }
 
-// how far conductor extends beyond spark shield
-conductor_extend = 10;
+
 
 conductor_outside = conductor_rad+conductor_extend;
 module brush_arm()
@@ -706,9 +721,17 @@ module base()
 
         
         
-        
+        // conductor support guides
         translate([base_l/2, base_d/2, 0])
         guide();
+
+        translate([base_l/2-35, base_d/2, 0])
+        guide();
+
+        translate([base_l/2+35, base_d/2, 0])
+        guide();
+
+
     }
     
 
