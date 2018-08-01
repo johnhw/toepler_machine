@@ -5,3 +5,15 @@
 * guides along neutraliser bar path (at correct angles)
 * allow brushes to extend further across the disk
 
+* factor out axle generation and both round axle and tight axle female holes (add keying option)
+* factor out rod/conductor generation
+* measure brush ends from centre of disk, not spark support axis
+* separate connector balls
+* screw threads for spark balls
+* optional torus fittings for spherical joints
+* feet / feet holes
+* splittable base board
+* skeleton supports
+* vertically splittable spark supports
+
+* annotations and key axes: consider http://www.cannymachines.com/entries/9/openscad_dimensioned_drawings
