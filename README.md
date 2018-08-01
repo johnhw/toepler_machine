@@ -10,5 +10,6 @@ See the `lib/` folder:
 * [Involute Bevel and Spur Gears by GregFrost](http://www.thingiverse.com/thing:3575) [CC-GPL]
 * [Pulleys by machineree](https://www.thingiverse.com/thing:2105020) [CC-GPL]
 * [Chamfered Primitives by SebiTimeWaster](https://www.thingiverse.com/thing:1305888) [MIT]
+* [Dimensioned lines by Dom Smiley](http://forum.openscad.org/Dimension-Parameter-labeling-for-part-diagrams-tp15172p15185.html) [Unknown license]
 
 
